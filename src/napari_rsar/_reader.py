@@ -1,15 +1,16 @@
 from tomlkit import load as parse
+from datetime import datetime
 from pathlib import Path
 import numpy as np
 
-def slc_rsar_file_reader(path):
+def rsar_file_reader(path):
     """
-    Reads SLC rSAR header information and data from the specified file.
+    Reads rSAR header information and data from the specified file.
 
     Parameters
     ----------
     path : str
-        Path to the SLC rSAR header file.
+        Path to the rSAR header file.
 
     Returns
     -------
@@ -24,7 +25,7 @@ def slc_rsar_file_reader(path):
 
     # Check if the header information is valid
     assert header['data']['version'] == 1, "Invalid version number in the header information"
-    assert header['data']['kind'] == 'slc', "Invalid data kind in the header information"
+    assert header['data']['kind'] in ['slc', 'rcc', 'dem', 'lobe'], "Invalid data kind in the header information"
 
     # Determine the byte order based on the header information
     byteorder = '<' if header['data']['endianness'] == 'le' else '>'
@@ -45,7 +46,7 @@ def slc_rsar_file_reader(path):
         raise ValueError("Unsupported data type")
 
     # Load the data from the file using numpy memmap
-    slc = np.memmap(
+    data = np.memmap(
         filename.with_suffix(''),
         shape=(header['data']['row']['size'], header['data']['col']['size']),
         offset=header['data']['global_offset_byte'],
@@ -56,7 +57,10 @@ def slc_rsar_file_reader(path):
     # Create Mipmaps for the first layer (Amplitude)
     scale = header['data']['data']['scale']
     offset = header['data']['data']['offset']
-    layer_mipmap = [scale * (np.abs(slc) - offset)]
+    if header['data']['is_complex']:
+        layer_mipmap = [scale * (np.abs(data) - offset)]
+    else:
+        layer_mipmap = [scale * (data - offset)]
 
     # Generate mipmaps for the image data
     index = 0
@@ -66,11 +70,13 @@ def slc_rsar_file_reader(path):
         index += 1
     
     # Define attributes for the layer
+    date_format = "%Y-%m-%dT%H:%M:%S.%fZ"
+    date_utc = datetime.strptime(header['data']['datetime'], date_format)
     layer_attributes = {
         'name': header['data']['data']['name'],
         'multiscale': True,
         'visible': True,
-        'metadata': f"{header['data']['desc']} {header['data']['datetime']}"
+        'metadata': f"{header['data']['desc']} - {date_utc}"
     }
 
     return [(layer_mipmap, layer_attributes, 'image')]
@@ -89,7 +95,10 @@ def get_rsar_reader(path):
     callable or None
         If the path is valid, returns the rSAR file reader function. Otherwise, returns None.
     """
-    if isinstance(path, str) and path.endswith('.slc.toml'):
-        return slc_rsar_file_reader
+    suffixes = ['.slc.toml', '.rcc.toml', '.dem.toml', '.lobe.toml']
+
+    # Check if the path is a string and ends with any of the specified suffixes
+    if isinstance(path, str) and any(path.endswith(ext) for ext in suffixes):
+        return rsar_file_reader # Return the rSAR file reader function
     else:
-        return None
+        return None # Return None if the path is not valid

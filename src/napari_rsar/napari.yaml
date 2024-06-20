@@ -2,12 +2,15 @@ name: napari-rsar
 display_name: rsar
 contributions:
   commands:
-    - id: napari-rsar.slc_reader
-      title: Read SLC rSAR files
+    - id: napari-rsar.reader
+      title: Read rSAR files (slc, rcc, dem, lobe)
       python_name: napari_rsar._reader:get_rsar_reader
       
   readers:
-    - command: napari-rsar.slc_reader
+    - command: napari-rsar.reader
       accepts_directories: false
       filename_patterns:
       - '*.slc.toml'
+      - '*.rcc.toml'
+      - '*.dem.toml'
+      - '*.lobe.toml'
