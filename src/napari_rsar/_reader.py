@@ -1,5 +1,4 @@
 from tomlkit import load as parse
-from datetime import datetime
 from pathlib import Path
 import numpy as np
 
@@ -34,14 +33,14 @@ def rsar_file_reader(path):
     datatype = header['data']['datatype']
     if datatype == 'u16':
         if header['data']['is_complex']:
-            type = 'c8' # 64-bit complex floating-point number
+            raise ValueError("Unsupported data type")
         else:
-            type = 'f4' # 32-bit floating-point number
+            type = 'f2' # 16-bit floating-point number
     elif datatype == 'f32':
         if header['data']['is_complex']:
-            type = 'c16' # 128-bit complex floating-point number
+            type = 'c8' # 64-bit complex floating-point number
         else:
-            type = 'f8' # 64-bit floating-point number
+            type = 'f4' # 34-bit floating-point number
     else:
         raise ValueError("Unsupported data type")
 
@@ -70,13 +69,14 @@ def rsar_file_reader(path):
         index += 1
     
     # Define attributes for the layer
-    date_format = "%Y-%m-%dT%H:%M:%S.%fZ"
-    date_utc = datetime.strptime(header['data']['datetime'], date_format)
     layer_attributes = {
         'name': header['data']['data']['name'],
         'multiscale': True,
         'visible': True,
-        'metadata': f"{header['data']['desc']} - {date_utc}"
+        'metadata': {
+            'description': header['data']['desc'],
+            'datetime': header['data']['datetime']
+        }
     }
 
     return [(layer_mipmap, layer_attributes, 'image')]
