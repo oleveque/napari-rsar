@@ -57,9 +57,9 @@ def rsar_file_reader(path):
     scale = header['data']['data']['scale']
     offset = header['data']['data']['offset']
     if header['data']['is_complex']:
-        layer_mipmap = [scale * (np.abs(data) - offset)]
+        layer_mipmap = [scale * (np.abs(data) + offset)]
     else:
-        layer_mipmap = [scale * (data - offset)]
+        layer_mipmap = [scale * (data + offset)]
 
     # Generate mipmaps for the image data
     index = 0
