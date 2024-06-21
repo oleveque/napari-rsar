@@ -74,8 +74,23 @@ def rsar_file_reader(path):
         'multiscale': True,
         'visible': True,
         'metadata': {
+            'kind': header['data']['data']['kind'],
+            'name': header['data']['data']['name'],
+            'unit': header['data']['data']['unit'],
             'description': header['data']['desc'],
-            'datetime': header['data']['datetime']
+            'datetime': header['data']['datetime'],
+            'row': {
+                'name': header['data']['row']['name'],
+                'origin': header['data']['row']['origin'],
+                'step': header['data']['row']['step'],
+                'unit': header['data']['row']['unit']
+            },
+            'col': {
+                'name': header['data']['col']['name'],
+                'origin': header['data']['col']['origin'],
+                'step': header['data']['col']['step'],
+                'unit': header['data']['col']['unit']
+            }
         }
     }
 
