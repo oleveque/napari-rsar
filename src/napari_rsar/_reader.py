@@ -74,7 +74,7 @@ def rsar_file_reader(path):
         'multiscale': True,
         'visible': True,
         'metadata': {
-            'kind': header['data']['data']['kind'],
+            'kind': header['data']['kind'],
             'name': header['data']['data']['name'],
             'unit': header['data']['data']['unit'],
             'description': header['data']['desc'],
