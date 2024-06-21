@@ -52,49 +52,53 @@ def rsar_file_reader(path):
         dtype=byteorder+type,
         mode='r'
     )
-
-    # Create Mipmaps for the first layer (Amplitude)
-    scale = header['data']['data']['scale']
-    offset = header['data']['data']['offset']
-    if header['data']['is_complex']:
-        layer_mipmap = [scale * (np.abs(data) + offset)]
-    else:
-        layer_mipmap = [scale * (data + offset)]
-
-    # Generate mipmaps for the image data
-    index = 0
-    while max(layer_mipmap[-1].shape) > 1024:
-        new_data = layer_mipmap[index][::2, ::2]
-        layer_mipmap.append(new_data)
-        index += 1
     
     # Define attributes for the layer
     layer_attributes = {
         'name': header['data']['data']['name'],
         'multiscale': True,
         'visible': True,
-        'metadata': {
-            'kind': header['data']['kind'],
-            'name': header['data']['data']['name'],
-            'unit': header['data']['data']['unit'],
-            'description': header['data']['desc'],
-            'datetime': header['data']['datetime'],
-            'row': {
-                'name': header['data']['row']['name'],
-                'origin': header['data']['row']['origin'],
-                'step': header['data']['row']['step'],
-                'unit': header['data']['row']['unit']
-            },
-            'col': {
-                'name': header['data']['col']['name'],
-                'origin': header['data']['col']['origin'],
-                'step': header['data']['col']['step'],
-                'unit': header['data']['col']['unit']
-            }
-        }
+        'metadata': header['data']
     }
 
-    return [(layer_mipmap, layer_attributes, 'image')]
+    # Create Mipmaps for the first layer (Amplitude)
+    scale = header['data']['data']['scale']
+    offset = header['data']['data']['offset']
+    
+    if header['data']['is_complex']:
+        layer1_mipmap = [scale * (np.abs(data) + offset)]
+        layer1_attributes = layer_attributes.copy()
+        layer1_attributes['name'] += ' [Amp]'
+        
+        layer2_mipmap = [scale * (np.angle(data) + offset)]
+        layer2_attributes = layer_attributes.copy()
+        layer2_attributes['name'] += ' [Phase]'
+        layer2_attributes['visible'] = False
+
+        # Generate mipmaps for the image data
+        index = 0
+        while max(layer1_mipmap[-1].shape) > 1024:
+            new_data = layer1_mipmap[index][::2, ::2]
+            layer1_mipmap.append(new_data)
+
+            new_data = layer2_mipmap[index][::2, ::2]
+            layer2_mipmap.append(new_data)
+
+            index += 1
+
+        return [(layer2_mipmap, layer2_attributes, 'image'), (layer1_mipmap, layer1_attributes, 'image')]
+    
+    else:
+        layer_mipmap = [scale * (data + offset)]
+
+        # Generate mipmaps for the image data
+        index = 0
+        while max(layer_mipmap[-1].shape) > 1024:
+            new_data = layer_mipmap[index][::2, ::2]
+            layer_mipmap.append(new_data)
+            index += 1
+
+        return [(layer_mipmap, layer_attributes, 'image')]
 
 def get_rsar_reader(path):
     """
