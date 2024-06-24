@@ -8,6 +8,12 @@ contributions:
     - id: napari-rsar.write_pamela
       title: Save a rSAR data array to a binary/header files in PamelaX11 format.
       python_name: napari_rsar._writer:write_image_pamela
+    - id: napari-rsar.widget_spectrum
+      title: Compute the 2D FFT of the selected region in an image
+      python_name: napari_rsar._widget:fft2
+    - id: napari-rsar.widget_histogram
+      title: Plot histogram of the selected region in an image
+      python_name: napari_rsar._widget:hist
       
   readers:
     - command: napari-rsar.reader
@@ -17,6 +23,7 @@ contributions:
       - '*.rcc.toml'
       - '*.dem.toml'
       - '*.lobe.toml'
+
   writers:
     - command: napari-rsar.write_pamela
       display_name: 'PamelaX11 format'
@@ -25,3 +32,9 @@ contributions:
       filename_extensions:
         - '.inf'
         - '.1'
+
+  widgets:
+    - command: napari-rsar.widget_spectrum
+      display_name: Spectrum 2D
+    - command: napari-rsar.widget_histogram
+      display_name: Histogram
