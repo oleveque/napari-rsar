@@ -54,7 +54,7 @@ def fft2(
                 show_error('The amplitude image and the phase image must have the same size')
                 return
             elif (not 0 <= indices[0] < indices[1] <= Amplitude_Image.data[0].shape[0]) or (not 0 <= indices[2] < indices[3] <= Amplitude_Image.data[0].shape[1]):
-                show_error('The area of interest must be included in the image')
+                show_error('The selected region must be included in the image')
                 return
 
             # Crop the data and apply phase information
@@ -125,7 +125,7 @@ def hist(
         if indices:
             # Validate indices
             if (not 0 <= indices[0] < indices[1] <= Amplitude_Image.data[0].shape[0]) or (not 0 <= indices[2] < indices[3] <= Amplitude_Image.data[0].shape[1]):
-                show_error('The area of interest must be included in the image')
+                show_error('The selected region must be included in the image')
                 return
 
             # Crop the data
