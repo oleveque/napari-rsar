@@ -61,7 +61,7 @@ def rsar_file_reader(path):
         'metadata': header['data']
     }
 
-    # Create Mipmaps for the first layer (Amplitude)
+    # Extract scale and offset values for data rescaling
     scale = header['data']['data']['scale']
     offset = header['data']['data']['offset']
     
