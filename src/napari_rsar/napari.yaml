@@ -5,6 +5,9 @@ contributions:
     - id: napari-rsar.reader
       title: Read rSAR files (slc, rcc, dem, lobe)
       python_name: napari_rsar._reader:get_rsar_reader
+    - id: napari-rsar.write_pamela
+      title: Save a rSAR data array to a binary/header files in PamelaX11 format.
+      python_name: napari_rsar._writer:write_image_pamela
       
   readers:
     - command: napari-rsar.reader
@@ -14,3 +17,11 @@ contributions:
       - '*.rcc.toml'
       - '*.dem.toml'
       - '*.lobe.toml'
+  writers:
+    - command: napari-rsar.write_pamela
+      display_name: 'PamelaX11 format'
+      layer_types:
+        - image
+      filename_extensions:
+        - '.inf'
+        - '.1'
