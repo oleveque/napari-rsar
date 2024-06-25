@@ -15,6 +15,11 @@ def bbox(rectangle):
         col_min = int(rectangle[:, 1].round().min())
         col_max = int(rectangle[:, 1].round().max())
         return (row_min, row_max, col_min, col_max)
+    
+def remove_prefix(text, prefix):
+    if text.startswith(prefix):
+        return text[len(prefix):]
+    return text
 
 @magic_factory(
     call_button='Calculate',
@@ -84,8 +89,9 @@ def fft2(
                 raise ValueError("Invalid Display_Mode. Use 'Amplitude', 'Phase', or 'Amplitude + Phase'.")
 
             # Display the result using matplotlib
+            filename = remove_prefix(Amplitude_Image.name, '[abs] ')
             _, ax = plt.subplots()
-            ax.set_title(f"FTT2D ({Display_Mode})")
+            ax.set_title(f"{filename}\nFTT2D ({Display_Mode})")
             ax.imshow(data_fft_display, extent=[-0.5, 0.5, -0.5, 0.5])
             ax.set_xlabel("Normalized Frequency")
             ax.set_ylabel("Normalized Frequency")
