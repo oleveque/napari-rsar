@@ -57,6 +57,7 @@ def rsar_file_reader(path):
     layer_attributes = {
         'name': filename.stem,
         'multiscale': True,
+        'colormap': 'gray',
         'visible': True,
         'metadata': header['data']
     }
@@ -68,11 +69,12 @@ def rsar_file_reader(path):
     if header['data']['is_complex']:
         layer1_mipmap = [scale * (np.abs(data) + offset)]
         layer1_attributes = layer_attributes.copy()
-        layer1_attributes['name'] += ' [Amp]'
+        layer1_attributes['name'] = '[abs] ' + layer1_attributes['name']
         
         layer2_mipmap = [scale * (np.angle(data) + offset)]
         layer2_attributes = layer_attributes.copy()
-        layer2_attributes['name'] += ' [Phase]'
+        layer2_attributes['name'] = '[ang] ' + layer2_attributes['name']
+        layer2_attributes['colormap'] = 'hsv'
         layer2_attributes['visible'] = False
 
         # Generate mipmaps for the image data
