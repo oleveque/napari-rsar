@@ -55,7 +55,7 @@ def rsar_file_reader(path):
     
     # Define attributes for the layer
     layer_attributes = {
-        'name': header['data']['data']['name'],
+        'name': filename.stem,
         'multiscale': True,
         'visible': True,
         'metadata': header['data']
