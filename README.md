@@ -4,14 +4,14 @@ A plugin for napari that facilitates the visualization and analysis of rSAR file
 
 ## Installation
 
-1. **Prerequisites**: Make sure you have [napari](https://napari.org/) installed on your system. If not, you can install it using [conda-forge](https://conda-forge.org/docs/user/introduction.html):
+1. **Prerequisites**: Make sure you have [napari](https://napari.org/) installed on your system. If you don't have it yet, you can easily install it using [conda-forge](https://conda-forge.org/docs/user/introduction.html):
 
 ```bash
 conda create -n napari-env -c conda-forge napari pyqt python=3.11
 conda activate napari-env
 ```
 
-2. **Install the Plugin**: You can install the plugin directly from GitHub using [pip](https://pypi.org/project/pip/):
+2. **Install the Plugin**: Next, you can install the plugin directly from GitHub using [pip](https://pypi.org/project/pip/):
 
 ```bash
 pip install git+https://github.com/oleveque/napari-rsar.git
@@ -23,13 +23,17 @@ git clone https://github.com/oleveque/napari-rsar.git
 pip install -e ./napari-rsar
 ```
 
-3. **Launch napari**: Launch napari from your terminal:
+3. **Launch napari**: To start using the plugin, launch napari from your terminal:
 
 ```bash
 napari
 ```
 
-4. **Open rSAR files**: Once napari is launched, you can open a rSAR file by dragging and dropping it to the napari viewer.
+4. **Open rSAR files**: Once napari is up and running, you can open an rSAR file by either dragging and dropping it into the napari viewer or using the command with the path to the rSAR image directly, for example:
+
+```bash
+napari <path/to/your/image.slc.toml>
+```
 
 ## Issues
 
