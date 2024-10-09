@@ -14,6 +14,9 @@ contributions:
     - id: napari-rsar.widget_histogram
       title: Plot histogram of the selected region in an image
       python_name: napari_rsar._widget:hist
+    - id: napari-rsar.widget_ign
+      title: Get the WMS raster associated with the selected image
+      python_name: napari_rsar._widget:get_wms_raster
       
   readers:
     - command: napari-rsar.reader
@@ -38,3 +41,5 @@ contributions:
       display_name: Spectrum 2D
     - command: napari-rsar.widget_histogram
       display_name: Histogram
+    - command: napari-rsar.widget_ign
+      display_name: IGN WMS Raster

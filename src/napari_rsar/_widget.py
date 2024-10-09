@@ -2,7 +2,10 @@ from napari.utils.notifications import show_error
 from magicgui import magic_factory
 import matplotlib.pyplot as plt
 import numpy as np
+import urllib.request
 import napari
+import io
+from PIL import Image as PILImage
 
 def bbox(rectangle):
     if rectangle.shape != (4, 2):
@@ -151,3 +154,44 @@ def hist(
             ax.set_xlabel('Values')
             ax.set_ylabel('Number of pixels')
             plt.show()
+
+@magic_factory(
+    call_button='Get WMS Raster',
+    Layer={"choices": ['BD ORTHO', 'PLAN IGN']}
+)
+def get_wms_raster(
+    Image: 'napari.layers.image.Image',
+    Layer: str = "BD ORTHO",
+    Use_ONERA_proxy_server: bool = True
+) -> 'napari.layers.Image':
+    meta = Image.metadata
+    height = meta["row"]["size"]
+    width = meta["col"]["size"]
+    xRange = (meta["row"]["origin"], meta["row"]["origin"] + (meta["row"]["size"]-1) * meta["row"]["step"])
+    yRange = (meta["col"]["origin"], meta["col"]["origin"] + (meta["col"]["size"]-1) * meta["col"]["step"])
+    
+    if Use_ONERA_proxy_server:
+        # Define the proxy
+        proxy_support = urllib.request.ProxyHandler({
+            'http': 'http://proxy.onera:80',
+            'https': 'http://proxy.onera:80'
+        })
+        opener = urllib.request.build_opener(proxy_support)
+        urllib.request.install_opener(opener)
+    else:
+        # Remove the proxy
+        proxy_support = urllib.request.ProxyHandler({})
+        opener = urllib.request.build_opener(proxy_support)
+        urllib.request.install_opener(opener)
+    
+    url = f"https://data.geopf.fr/wms-r?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&CRS=EPSG:4326&BBOX={min(xRange)},{min(yRange)},{max(xRange)},{max(yRange)}&WIDTH={width}&HEIGHT={height}"
+    if Layer == "BD ORTHO":
+        url += "&LAYERS=HR.ORTHOIMAGERY.ORTHOPHOTOS&STYLES=normal&FORMAT=image/jpeg"
+    elif Layer == "PLAN IGN":
+        url += "&LAYERS=GEOGRAPHICALGRIDSYSTEMS.PLANIGNV2&STYLES=&FORMAT=image/png"
+    
+    with urllib.request.urlopen(url) as u:
+        data = u.read()
+        image = PILImage.open(io.BytesIO(data))
+        image_layer = napari.layers.Image(np.array(image), name=Layer, opacity=0.7)
+        return image_layer
