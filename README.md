@@ -7,7 +7,7 @@ A plugin for napari that facilitates the visualization and analysis of rSAR file
 1. **Prerequisites**: Make sure you have [napari](https://napari.org/) installed on your system. If you don't have it yet, you can easily install it using [conda-forge](https://conda-forge.org/docs/user/introduction.html):
 
 ```bash
-conda create -n napari-env -c conda-forge napari pyqt python=3.11
+conda create -n napari-env -c conda-forge napari pyqt python=3.12
 conda activate napari-env
 ```
 
