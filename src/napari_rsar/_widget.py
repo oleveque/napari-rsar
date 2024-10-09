@@ -164,6 +164,23 @@ def get_wms_raster(
     Layer: str = "BD ORTHO",
     Use_ONERA_proxy_server: bool = True
 ) -> 'napari.layers.Image':
+    """
+    Get the raster image from the WMS server.
+
+    Parameters
+    ----------
+    Image : napari.layers.image.Image
+        The image layer containing the geographic information.
+    Layer : str, optional
+        The layer to retrieve from the WMS server, by default "BD ORTHO".
+    Use_ONERA_proxy_server : bool, optional
+        Use the ONERA proxy server, by default True.
+
+    Returns
+    -------
+    napari.layers.Image
+        The raster image from the WMS server.
+    """
     meta = Image.metadata
     height = meta["row"]["size"]
     width = meta["col"]["size"]
