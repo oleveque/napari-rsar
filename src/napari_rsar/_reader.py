@@ -1,6 +1,7 @@
 from tomlkit import load as parse
 from pathlib import Path
 import numpy as np
+import napari
 
 def rsar_file_reader(path):
     """
@@ -52,33 +53,17 @@ def rsar_file_reader(path):
         dtype=byteorder+type,
         mode='r'
     )
-    
-    # Define attributes for the layer
-    layer_attributes = {
-        'name': filename.stem,
-        'multiscale': True,
-        'colormap': 'gray',
-        'visible': True,
-        'metadata': header['data']
-    }
 
     # Extract scale and offset values for data rescaling
     scale = header['data']['data']['scale']
     offset = header['data']['data']['offset']
     
     if header['data']['is_complex']:
-        layer1_mipmap = [scale * (np.abs(data) + offset)]
-        layer1_attributes = layer_attributes.copy()
-        layer1_attributes['name'] = '[abs] ' + layer1_attributes['name']
-        
-        layer2_mipmap = [scale * (np.angle(data) + offset)]
-        layer2_attributes = layer_attributes.copy()
-        layer2_attributes['name'] = '[ang] ' + layer2_attributes['name']
-        layer2_attributes['colormap'] = 'hsv'
-        layer2_attributes['visible'] = False
-
         # Generate mipmaps for the image data
         index = 0
+        layer = scale * (data + offset)
+        layer1_mipmap = [np.abs(layer)]
+        layer2_mipmap = [np.angle(layer)]
         while max(layer1_mipmap[-1].shape) > 1024:
             new_data = layer1_mipmap[index][::2, ::2]
             layer1_mipmap.append(new_data)
@@ -88,19 +73,68 @@ def rsar_file_reader(path):
 
             index += 1
 
-        return [(layer2_mipmap, layer2_attributes, 'image'), (layer1_mipmap, layer1_attributes, 'image')]
+        # Create a layer for the magnitude data
+        (data1, attributes1, type1) = napari.layers.Image(
+            data=layer1_mipmap,
+            name=f'[abs] {filename.stem}',
+            contrast_limits=[0, np.percentile(layer1_mipmap[0], 92)],
+            #translate=(header['data']['row']['origin'], header['data']['col']['origin']),
+            #scale=(header['data']['row']['step'], header['data']['col']['step']),
+            #units=(header['data']['row']['unit'], header['data']['col']['unit']),
+            axis_labels=(header['data']['row']['name'], header['data']['col']['name']),
+            #custom_interpolation_kernel_2d=np.ones((3, 3))/9,
+            #interpolation2d='custom',
+            multiscale=True,
+            colormap='gray',
+            visible=True,
+            metadata=header['data'].get('log', None)
+        ).as_layer_data_tuple()
+
+        # Create a second layer for the angle data
+        (data2, attributes2, type2) = napari.layers.Image(
+            data=layer2_mipmap,
+            name=f'[ang] {filename.stem}',
+            contrast_limits = [-np.pi, np.pi],
+            #translate=(header['data']['row']['origin'], header['data']['col']['origin']),
+            #scale=(header['data']['row']['step'], header['data']['col']['step']),
+            #units=(header['data']['row']['unit'], header['data']['col']['unit']),
+            axis_labels=(header['data']['row']['name'], header['data']['col']['name']),
+            interpolation2d='nearest',
+            multiscale=True,
+            colormap='hsv',
+            visible=False,
+            metadata=header['data'].get('log', None)
+        ).as_layer_data_tuple()
+        
+        return [(data2, dict(attributes2), type2), (data1, dict(attributes1), type1)]
     
     else:
-        layer_mipmap = [scale * (data + offset)]
-
         # Generate mipmaps for the image data
         index = 0
+        layer_mipmap = [scale * (data + offset)]
         while max(layer_mipmap[-1].shape) > 1024:
             new_data = layer_mipmap[index][::2, ::2]
             layer_mipmap.append(new_data)
             index += 1
-
-        return [(layer_mipmap, layer_attributes, 'image')]
+        
+        # Create a layer for the image data
+        (data, attributes, type) = napari.layers.Image(
+            data=layer_mipmap,
+            name=filename.stem,
+            contrast_limits=[0, np.percentile(layer1_mipmap[0], 92)],
+            #translate=(header['data']['row']['origin'], header['data']['col']['origin']),
+            #scale=(header['data']['row']['step'], header['data']['col']['step']),
+            #units=(header['data']['row']['unit'], header['data']['col']['unit']),
+            axis_labels=(header['data']['row']['name'], header['data']['col']['name']),
+            #custom_interpolation_kernel_2d=np.ones((3, 3))/9,
+            #interpolation2d='custom',
+            multiscale=True,
+            colormap='gray',
+            visible=True,
+            metadata=header['data'].get('log', None)
+        ).as_layer_data_tuple()
+        
+        return [(data, dict(attributes), type)]
 
 def get_rsar_reader(path):
     """
