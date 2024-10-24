@@ -73,17 +73,26 @@ def rsar_file_reader(path):
 
             index += 1
 
+        # Affine transformation for the image data
+        transform = napari.utils.transforms.Affine(
+            scale=(header['data']['row']['step'], header['data']['col']['step']),
+            translate=(header['data']['row']['origin'], header['data']['col']['origin'])
+        )
+
+        # Ratio of the pixel sizes in the row and column directions
+        scale_ratio = np.round(np.abs(header['data']['col']['step']/header['data']['row']['step']), decimals=2)
+
         # Create a layer for the magnitude data
         (data1, attributes1, type1) = napari.layers.Image(
             data=layer1_mipmap,
             name=f'[abs] {filename.stem}',
             contrast_limits=[0, np.percentile(layer1_mipmap[0], 92)],
-            #translate=(header['data']['row']['origin'], header['data']['col']['origin']),
-            #scale=(header['data']['row']['step'], header['data']['col']['step']),
-            #units=(header['data']['row']['unit'], header['data']['col']['unit']),
+            affine=transform,
+            scale=(-scale_ratio, 1),
+            units=(header['data']['row']['unit'], header['data']['col']['unit']),
             axis_labels=(header['data']['row']['name'], header['data']['col']['name']),
-            #custom_interpolation_kernel_2d=np.ones((3, 3))/9,
-            #interpolation2d='custom',
+            custom_interpolation_kernel_2d=np.ones((2, 2))/4,
+            interpolation2d='custom', # FIXME: "custom" label not displayed in the GUI
             multiscale=True,
             colormap='gray',
             visible=True,
@@ -95,9 +104,9 @@ def rsar_file_reader(path):
             data=layer2_mipmap,
             name=f'[ang] {filename.stem}',
             contrast_limits = [-np.pi, np.pi],
-            #translate=(header['data']['row']['origin'], header['data']['col']['origin']),
-            #scale=(header['data']['row']['step'], header['data']['col']['step']),
-            #units=(header['data']['row']['unit'], header['data']['col']['unit']),
+            affine=transform,
+            scale=(-scale_ratio, 1),
+            units=(header['data']['row']['unit'], header['data']['col']['unit']),
             axis_labels=(header['data']['row']['name'], header['data']['col']['name']),
             interpolation2d='nearest',
             multiscale=True,
@@ -122,12 +131,12 @@ def rsar_file_reader(path):
             data=layer_mipmap,
             name=filename.stem,
             contrast_limits=[0, np.percentile(layer1_mipmap[0], 92)],
-            #translate=(header['data']['row']['origin'], header['data']['col']['origin']),
-            #scale=(header['data']['row']['step'], header['data']['col']['step']),
-            #units=(header['data']['row']['unit'], header['data']['col']['unit']),
+            affine=transform,
+            scale=(-scale_ratio, 1),
+            units=(header['data']['row']['unit'], header['data']['col']['unit']),
             axis_labels=(header['data']['row']['name'], header['data']['col']['name']),
-            #custom_interpolation_kernel_2d=np.ones((3, 3))/9,
-            #interpolation2d='custom',
+            custom_interpolation_kernel_2d=np.ones((2, 2))/4,
+            interpolation2d='custom', # FIXME: "custom" label not displayed in the GUI
             multiscale=True,
             colormap='gray',
             visible=True,
