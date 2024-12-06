@@ -1,10 +1,10 @@
 import numpy as np
+import pandas as pd
 from scipy.constants import c as c0
 from scipy.interpolate import RegularGridInterpolator
 from sargeom.coordinates import Cartographic, CartesianECEF, Cartesian3
 
 from pathlib import Path
-from pandas import DataFrame
 from matplotlib import pyplot as plt
 
 ZAXIS = Cartesian3.UNIT_Z
@@ -166,7 +166,7 @@ def estimate_waveform_correction(data, header, output_path, display=False):
     # Waveform correction file #
     ############################
     band_path = Path(output_path).with_suffix('.band.csv')
-    band_data = DataFrame({
+    band_data = pd.DataFrame({
         'FREQUENCY_HZ': finterp,
         'AMPLITUDE_LIN': np.abs(spec_range_interp),
         'PHASE_RAD': np.unwrap(np.angle(spec_range_interp))
