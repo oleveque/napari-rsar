@@ -2,7 +2,7 @@ from typing import Any, List
 from pathlib import Path
 import numpy as np
 
-def write_image_pamela(path: str, data: Any, attributes: dict) -> List[str]:
+def write_pamela_image(path: str, data: Any, attributes: dict) -> List[str]:
     filename = Path(path)
 
     # Create .inf file
