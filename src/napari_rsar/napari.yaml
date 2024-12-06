@@ -8,6 +8,9 @@ contributions:
     - id: napari-rsar.write_pamela
       title: Save an image layer to a binary/header files in PamelaX11 format.
       python_name: napari_rsar._writer:write_pamela_image
+    - id: napari-rsar.write_numpy
+      title: Save an image layer to a binary file in Numpy format.
+      python_name: napari_rsar._writer:write_numpy_array
     - id: napari-rsar.widget_spectrum
       title: Compute the 2D FFT of the selected region in an image
       python_name: napari_rsar._widget:fft2
@@ -35,6 +38,12 @@ contributions:
       filename_extensions:
         - '.inf'
         - '.1'
+    - command: napari-rsar.write_numpy
+      display_name: 'Numpy format'
+      layer_types:
+        - image
+      filename_extensions:
+        - '.npy'
 
   widgets:
     - command: napari-rsar.widget_spectrum

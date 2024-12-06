@@ -21,3 +21,13 @@ def write_pamela_image(path: str, data: Any, attributes: dict) -> List[str]:
 
     # Return paths to the created files
     return [infpath, slcpath]
+
+def write_numpy_array(path: str, data: Any, attributes: dict) -> List[str]:
+    filename = Path(path)
+
+    # Create .npy file
+    path = filename.with_suffix('.npy')
+    np.save(path, data[0][:])
+
+    # Return path to the created file
+    return [path]
