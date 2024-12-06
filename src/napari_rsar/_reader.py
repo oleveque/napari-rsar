@@ -114,7 +114,7 @@ def rsar_file_reader(path):
         (data, attributes, type) = napari.layers.Image(
             data=layer_mipmap,
             name=filename.stem,
-            contrast_limits=[0, np.percentile(layer1_mipmap[0], 92)],
+            contrast_limits=[0, np.percentile(layer_mipmap[0], 92)],
             axis_labels=(header['data']['row']['name'], header['data']['col']['name']),
             interpolation2d='nearest',
             multiscale=True,
