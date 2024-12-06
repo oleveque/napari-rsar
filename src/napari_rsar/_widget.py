@@ -52,12 +52,9 @@ def fft2(
     -------
     None
     """
-    for shape in Selected_Zones.data:
-        # Origin of the world coordinates in the image coordinates
-        origin = Amplitude_Image.world_to_data([0,0])
-
+    for corners in Selected_Zones.data:
         # Extract cropping indices
-        indices = bbox(shape + origin)
+        indices = bbox(corners)
 
         if indices:
             # Validate input shapes and indices
@@ -130,12 +127,9 @@ def hist(
     None
         The function displays the histogram plot.
     """
-    for shape in Selected_Zones.data:
-        # Origin of the world coordinates in the image coordinates
-        origin = Amplitude_Image.world_to_data([0,0])
-
+    for corners in Selected_Zones.data:
         # Extract cropping indices
-        indices = bbox(shape + origin)
+        indices = bbox(corners)
 
         if indices:
             # Validate indices
