@@ -1,6 +1,6 @@
 import numpy as np
 from scipy.constants import c as c0
-from sargeom.coordinates import Cartographic, CartesianECEF
+from sargeom.coordinates import Cartographic, CartesianECEF, Cartesian3
 
 def find_global_time_offset(data, header):
     # RX integration center position
@@ -36,7 +36,7 @@ def find_global_time_offset(data, header):
         z=header['data']['log']['flash']['azimuth']['integration']['tx']['center']['velocity_ecef'][2] # [m/s]
     )
 
-    # 
+    # Data axes information
     ax_shape = (header['data']['row']['size'], header['data']['col']['size'])
     ax_origin = (header['data']['row']['origin'], header['data']['col']['origin'])
     ax_step = (header['data']['row']['step'], header['data']['col']['step'])
@@ -68,13 +68,13 @@ def find_global_time_offset(data, header):
     #  Stop-and-Go approximation #
     ##############################
     # delay_truth = (
-    #     (gp_orx_center - gp_truth).norm() +
-    #     (gp_otx_center - gp_truth).norm()
+    #     (gp_orx_center - gp_truth).magnitude() +
+    #     (gp_otx_center - gp_truth).magnitude()
     # ) / c0
 
     # delay_measured = (
-    #     (gp_orx_center - gp_max).norm() +
-    #     (gp_otx_center - gp_max).norm()
+    #     (gp_orx_center - gp_max).magnitude() +
+    #     (gp_otx_center - gp_max).magnitude()
     # ) / c0
 
     #####################################
@@ -83,15 +83,35 @@ def find_global_time_offset(data, header):
     rp_truth = gp_truth - gp_orx_center
     tp_truth = gp_truth - gp_otx_center
     delay_truth = (
-        (rp_truth.norm() + tp_truth.norm()) /
-        (c0 + rp_truth.normalize().dot(vrx))
+        (rp_truth.magnitude() + tp_truth.magnitude()) /
+        (c0 + Cartesian3.dot(rp_truth.normalize(), vrx))
     )
 
     rp_measured = gp_max - gp_orx_center
     tp_measured = gp_max - gp_otx_center
     delay_measured = (
-        (rp_measured.norm() + tp_measured.norm()) /
-        (c0 + rp_measured.normalize().dot(vrx))
+        (rp_measured.magnitude() + tp_measured.magnitude()) /
+        (c0 + Cartesian3.dot(rp_measured.normalize(), vrx))
     )
 
-    return delay_measured - delay_truth # [s]
+    return np.squeeze(delay_measured - delay_truth) # [s]
+
+if __name__ == '__main__':
+    from pathlib import Path
+    import tomlkit
+    import sys
+
+    # Get filename
+    filename = Path(sys.argv[1])
+
+    # Load data and header
+    with open(filename, 'r') as f:
+        header = tomlkit.load(f)
+        data = np.memmap(filename.with_suffix(''),
+            shape=(header['data']['row']['size'], header['data']['col']['size']),
+            dtype='c8'
+        )
+
+    # Find global time offset
+    time_offset = find_global_time_offset(data, header)
+    print(time_offset)
