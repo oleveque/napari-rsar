@@ -267,6 +267,8 @@ def estimate_waveform_correction(data, header, output_path, display=False):
         ax2.grid(True)
         plt.tight_layout()
 
+        plt.show()
+
         # from pymela.visualisation import pqi
         # pqi(slc_range, title='Ground range slice', oversample=1, dist_step=spacing_min)
         # pqi(slc_azi, title='Ground azimuth slice', oversample=1, dist_step=spacing_min)
@@ -290,4 +292,3 @@ if __name__ == "__main__":
     # Estimate waveform correction
     output_path = filename.with_stem(filename.stem + '_waveform_correction')
     estimate_waveform_correction(data, header, output_path, display=True)
-    plt.show()
