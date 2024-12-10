@@ -7,7 +7,7 @@ from sargeom.coordinates import Cartographic, CartesianECEF, Cartesian3
 from pathlib import Path
 from matplotlib import pyplot as plt
 
-ZAXIS = Cartesian3.UNIT_Z
+ZAXIS = Cartesian3.UNIT_Z()
 
 HEADER = (
 "# Fields description:\n"
@@ -19,13 +19,6 @@ HEADER = (
 "#        - PHASE_RAD [rad]: The unwrapped phase of the complex waveform correction file in radians.\n\n")
 
 def estimate_waveform_correction(data, header, output_path, display=False):
-    # RX integration center position
-    gp_orx_center = Cartographic(
-        longitude=header['data']['log']['flash']['azimuth']['integration']['rx']['center']['position_geo'][0], # [deg]
-        latitude=header['data']['log']['flash']['azimuth']['integration']['rx']['center']['position_geo'][1], # [deg]
-        height=header['data']['log']['flash']['azimuth']['integration']['rx']['center']['position_geo'][2] # [m]
-    )
-
     # TX integration center position
     gp_otx_center = Cartographic(
         longitude=header['data']['log']['flash']['azimuth']['integration']['tx']['center']['position_geo'][0], # [deg]
@@ -33,19 +26,26 @@ def estimate_waveform_correction(data, header, output_path, display=False):
         height=header['data']['log']['flash']['azimuth']['integration']['tx']['center']['position_geo'][2] # [m]
     )
 
-    # Velocity vectors estimation @ integration center
-    vrx = CartesianECEF(
-        x=header['data']['log']['flash']['azimuth']['integration']['rx']['center']['velocity_ecef'][0], # [m/s]
-        y=header['data']['log']['flash']['azimuth']['integration']['rx']['center']['velocity_ecef'][1], # [m/s]
-        z=header['data']['log']['flash']['azimuth']['integration']['rx']['center']['velocity_ecef'][2] # [m/s]
+    # RX integration center position
+    gp_orx_center = Cartographic(
+        longitude=header['data']['log']['flash']['azimuth']['integration']['rx']['center']['position_geo'][0], # [deg]
+        latitude=header['data']['log']['flash']['azimuth']['integration']['rx']['center']['position_geo'][1], # [deg]
+        height=header['data']['log']['flash']['azimuth']['integration']['rx']['center']['position_geo'][2] # [m]
     )
+
+    # Velocity vectors estimation @ integration center
     vtx = CartesianECEF(
         x=header['data']['log']['flash']['azimuth']['integration']['tx']['center']['velocity_ecef'][0], # [m/s]
         y=header['data']['log']['flash']['azimuth']['integration']['tx']['center']['velocity_ecef'][1], # [m/s]
         z=header['data']['log']['flash']['azimuth']['integration']['tx']['center']['velocity_ecef'][2] # [m/s]
     )
+    vrx = CartesianECEF(
+        x=header['data']['log']['flash']['azimuth']['integration']['rx']['center']['velocity_ecef'][0], # [m/s]
+        y=header['data']['log']['flash']['azimuth']['integration']['rx']['center']['velocity_ecef'][1], # [m/s]
+        z=header['data']['log']['flash']['azimuth']['integration']['rx']['center']['velocity_ecef'][2] # [m/s]
+    )
     
-    # 
+    # Data axes information
     ax_shape = (header['data']['row']['size'], header['data']['col']['size'])
     ax_origin = (header['data']['row']['origin'], header['data']['col']['origin'])
     ax_step = (header['data']['row']['step'], header['data']['col']['step'])
@@ -73,11 +73,11 @@ def estimate_waveform_correction(data, header, output_path, display=False):
         height=header['data']['log']['flash']['scene']['center_geo'][-1] # [m]
     )
     
-    # 
-    orx_center = gp_orx_center.to_ecef().to_enu(origin=gp_max)
+    # Convert to ECEF
     otx_center = gp_otx_center.to_ecef().to_enu(origin=gp_max)
-    vrx = vrx.to_enu(origin=gp_max)
-    vtx = vtx.to_enu(origin=gp_max)
+    orx_center = gp_orx_center.to_ecef().to_enu(origin=gp_max)
+    vtx = vtx.to_enuv(origin=gp_max)
+    vrx = vrx.to_enuv(origin=gp_max)
 
     # Bisector vector @ maximum
     txp,  rxp = -otx_center, -orx_center
@@ -88,8 +88,8 @@ def estimate_waveform_correction(data, header, output_path, display=False):
     betag = beta.reject_from(ZAXIS)
 
     # First derivative of betagc
-    dbetarx = -(vrx - (urxp.dot(vrx)) * urxp) / rxp.norm()
-    dbetatx = -(vtx - (utxp.dot(vtx)) * utxp) / txp.norm()
+    dbetatx = -(vtx - (utxp.dot(vtx)) * utxp) / txp.magnitude()
+    dbetarx = -(vrx - (urxp.dot(vrx)) * urxp) / rxp.magnitude()
     dbeta = (
         (c0 * (dbetatx + dbetarx) - (dbetarx.dot(vrx)) * beta) /
         (c0 + urxp.dot(vrx))
@@ -123,18 +123,18 @@ def estimate_waveform_correction(data, header, output_path, display=False):
     ) # note: `RegularGridInterpolator` uses 'ij' indexing
 
     # Interpolation conditions
-    dist_max = np.min( # distance in the range/doppler direciton for interpolation
+    dist_max = np.min([ # distance in the range/doppler direciton for interpolation
         (ax_shape[1]//2 - np.abs(ax_shape[1]//2 - max_indexes[1])) * 2.0 * spacing_x_m,
         (ax_shape[0]//2 - np.abs(ax_shape[0]//2 - max_indexes[0])) * 2.0 * spacing_y_m,
-    )
-    spacing_min = np.min(spacing_x_m, spacing_y_m) # taille pixel minimum
+    ])
+    spacing_min = np.min([spacing_x_m, spacing_y_m]) # taille pixel minimum
     ninterp = int(np.round(dist_max / spacing_min)) + 1 # nombre de points pour l'interpolation
     if ninterp % 2 == 0: # Assure d'avoir un nombre impair (et donc un vrai zéro au centre)
         ninterp -= 1
 
     # Axe "distance algébrique" d'interpolation
     range_dist = (np.arange(ninterp) - ninterp // 2) * spacing_min
-    range_axis = range_dist * rg.expand_dims(1) # Vecteur d'interpolation
+    range_axis = range_dist[:, None] * rg # Vecteur d'interpolation
 
     # Interpolation selon l'axe voulu
     slc_range = interpolator((range_axis.y, range_axis.x))
@@ -150,13 +150,13 @@ def estimate_waveform_correction(data, header, output_path, display=False):
     # Range spectrum interpolation
     fc = header['data']['log']['range']['center_frequency_hz']
     bproc = header['data']['log']['range']['processed_bandwidth_hz']
-    df = c0 / (2 * np.pi) * dk / betag.norm() # échantillonnage fréquentiel correspondant à l'échantillonnage en nombre d'onde
+    df = c0 / (2 * np.pi) * dk / np.squeeze(betag.magnitude()) # échantillonnage fréquentiel correspondant à l'échantillonnage en nombre d'onde
     nf = int(bproc / df) + 1
     if nf < 101: # On prend au moins 101 points d'interpolation (notamment si l'image d'origine n'a pas été suréchantillonnée au calcu... Pas bien !!)
         nf = 101
     # df_interp = bproc / (nf - 1)
     finterp = np.linspace(fc-0.5*bproc, fc+0.5*bproc, nf) # Fréquences (RF) d'interpolation
-    kinterp = 2 * np.pi / c0 * (finterp - fc) * betag.norm() # Nombre d'onde (centré) correspondant aux fréquences
+    kinterp = 2 * np.pi / c0 * (finterp - fc) * betag.magnitude() # Nombre d'onde (centré) correspondant aux fréquences
     
     # Interpolated range spectrum
     spec_range_interp = np.interp(kinterp, krange, spec_range)
@@ -182,7 +182,7 @@ def estimate_waveform_correction(data, header, output_path, display=False):
     if display:
         # Axe "azimut algébrique" d'interpolation
         azi_dist = (np.arange(ninterp) - ninterp // 2) * spacing_min
-        azi_axis = azi_dist * dg.expand_dims(1) # Vecteur d'interpolation
+        azi_axis = azi_dist[:, None] * dg # Vecteur d'interpolation
         
         # Interpolation selon l'axe voulu
         slc_azi = interpolator((azi_axis.y, azi_axis.x))
@@ -209,18 +209,18 @@ def estimate_waveform_correction(data, header, output_path, display=False):
                     yaxis_plot.min(), yaxis_plot.max()],
         )
         plt.arrow(
-            range_axis_plot[0].x, range_axis_plot[0].y,
-            range_axis_plot[-1].x - range_axis_plot[0].x,
-            range_axis_plot[-1].y - range_axis_plot[0].y,
+            range_axis_plot.x[0], range_axis_plot.y[0],
+            range_axis_plot.x[-1] - range_axis_plot.x[0],
+            range_axis_plot.y[-1] - range_axis_plot.y[0],
             length_includes_head=True,
             head_width=dist_max*0.025,
             color='tab:red',
             # label="Ground range"
         )
         plt.arrow(
-            azi_axis_plot[0].x, azi_axis_plot[0].y,
-            azi_axis_plot[-1].x - azi_axis_plot[0].x,
-            azi_axis_plot[-1].y - azi_axis_plot[0].y,
+            azi_axis_plot.x[0], azi_axis_plot.y[0],
+            azi_axis_plot.x[-1] - azi_axis_plot.x[0],
+            azi_axis_plot.y[-1] - azi_axis_plot.y[0],
             length_includes_head=True,
             head_width=dist_max*0.025,
             color='tab:blue',
@@ -252,7 +252,7 @@ def estimate_waveform_correction(data, header, output_path, display=False):
         ax2.sharex(ax1)
         ax2.grid(True)
         plt.tight_layout()
-        
+
         fig, (ax1, ax2) = plt.subplots(2)
         fig.suptitle('Range spectrum slice')
 
@@ -271,3 +271,24 @@ def estimate_waveform_correction(data, header, output_path, display=False):
         # pqi(slc_range, title='Ground range slice', oversample=1, dist_step=spacing_min)
         # pqi(slc_azi, title='Ground azimuth slice', oversample=1, dist_step=spacing_min)
         # plt.show()
+
+if __name__ == "__main__":
+    from pathlib import Path
+    import tomlkit
+    import sys
+
+    # Get filename
+    filename = Path(sys.argv[1])
+
+    # Load data and header
+    with open(filename, 'r') as f:
+        header = tomlkit.load(f)
+        data = np.memmap(filename.with_suffix(''),
+            shape=(header['data']['row']['size'], header['data']['col']['size']),
+            dtype='c8'
+        )
+
+    # Estimate waveform correction
+    output_path = filename.with_stem(filename.stem + '_waveform_correction')
+    estimate_waveform_correction(data, header, output_path, display=True)
+    plt.show()
