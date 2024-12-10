@@ -273,7 +273,6 @@ def estimate_waveform_correction(data, header, output_path, display=False):
         # plt.show()
 
 if __name__ == "__main__":
-    from pathlib import Path
     import tomlkit
     import sys
 
