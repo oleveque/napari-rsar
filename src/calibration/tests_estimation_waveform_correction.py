@@ -73,7 +73,7 @@ def estimate_waveform_correction(data, header, output_path, display=False):
         height=header['data']['log']['flash']['scene']['center_geo'][-1] # [m]
     )
     
-    # Convert to ECEF
+    # Convert to local ENU coordinates
     otx_center = gp_otx_center.to_ecef().to_enu(origin=gp_max)
     orx_center = gp_orx_center.to_ecef().to_enu(origin=gp_max)
     vtx = vtx.to_enuv(origin=gp_max)
