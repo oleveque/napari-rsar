@@ -1,20 +1,20 @@
 import numpy as np
 from scipy.constants import c as c0
-from sargeom.coordinates import Cartographic, CartesianECEF, Cartesian3
+from sargeom.coordinates import Cartographic, CartesianECEF
 
 def find_global_time_offset(data, header):
-    # RX integration center position
-    gp_orx_center = Cartographic(
-        longitude=header['data']['log']['flash']['azimuth']['integration']['rx']['center']['position_geo'][0], # [deg]
-        latitude=header['data']['log']['flash']['azimuth']['integration']['rx']['center']['position_geo'][1], # [deg]
-        height=header['data']['log']['flash']['azimuth']['integration']['rx']['center']['position_geo'][2] # [m]
-    ).to_ecef()
-
     # TX integration center position
     gp_otx_center = Cartographic(
         longitude=header['data']['log']['flash']['azimuth']['integration']['tx']['center']['position_geo'][0], # [deg]
         latitude=header['data']['log']['flash']['azimuth']['integration']['tx']['center']['position_geo'][1], # [deg]
         height=header['data']['log']['flash']['azimuth']['integration']['tx']['center']['position_geo'][2] # [m]
+    ).to_ecef()
+
+    # RX integration center position
+    gp_orx_center = Cartographic(
+        longitude=header['data']['log']['flash']['azimuth']['integration']['rx']['center']['position_geo'][0], # [deg]
+        latitude=header['data']['log']['flash']['azimuth']['integration']['rx']['center']['position_geo'][1], # [deg]
+        height=header['data']['log']['flash']['azimuth']['integration']['rx']['center']['position_geo'][2] # [m]
     ).to_ecef()
 
     # Ground truth position
@@ -25,15 +25,15 @@ def find_global_time_offset(data, header):
     ).to_ecef()
 
     # Velocity vectors estimation @ integration center
+    # vtx = CartesianECEF(
+    #     x=header['data']['log']['flash']['azimuth']['integration']['tx']['center']['velocity_ecef'][0], # [m/s]
+    #     y=header['data']['log']['flash']['azimuth']['integration']['tx']['center']['velocity_ecef'][1], # [m/s]
+    #     z=header['data']['log']['flash']['azimuth']['integration']['tx']['center']['velocity_ecef'][2] # [m/s]
+    # )
     vrx = CartesianECEF(
         x=header['data']['log']['flash']['azimuth']['integration']['rx']['center']['velocity_ecef'][0], # [m/s]
         y=header['data']['log']['flash']['azimuth']['integration']['rx']['center']['velocity_ecef'][0], # [m/s]
         z=header['data']['log']['flash']['azimuth']['integration']['rx']['center']['velocity_ecef'][0] # [m/s]
-    )
-    vtx = CartesianECEF(
-        x=header['data']['log']['flash']['azimuth']['integration']['tx']['center']['velocity_ecef'][0], # [m/s]
-        y=header['data']['log']['flash']['azimuth']['integration']['tx']['center']['velocity_ecef'][1], # [m/s]
-        z=header['data']['log']['flash']['azimuth']['integration']['tx']['center']['velocity_ecef'][2] # [m/s]
     )
 
     # Data axes information
@@ -68,30 +68,30 @@ def find_global_time_offset(data, header):
     #  Stop-and-Go approximation #
     ##############################
     # delay_truth = (
-    #     (gp_orx_center - gp_truth).magnitude() +
-    #     (gp_otx_center - gp_truth).magnitude()
+    #     (gp_otx_center - gp_truth).magnitude() +
+    #     (gp_orx_center - gp_truth).magnitude()
     # ) / c0
 
     # delay_measured = (
-    #     (gp_orx_center - gp_max).magnitude() +
-    #     (gp_otx_center - gp_max).magnitude()
+    #     (gp_otx_center - gp_max).magnitude() +
+    #     (gp_orx_center - gp_max).magnitude()
     # ) / c0
 
     #####################################
     #  Fast-Time Mean FFL approximation #
     #####################################
-    rp_truth = gp_truth - gp_orx_center
     tp_truth = gp_truth - gp_otx_center
+    rp_truth = gp_truth - gp_orx_center
     delay_truth = (
-        (rp_truth.magnitude() + tp_truth.magnitude()) /
-        (c0 + Cartesian3.dot(rp_truth.normalize(), vrx))
+        (tp_truth.magnitude() + rp_truth.magnitude()) /
+        (c0 + rp_truth.normalize().dot(vrx))
     )
 
-    rp_measured = gp_max - gp_orx_center
     tp_measured = gp_max - gp_otx_center
+    rp_measured = gp_max - gp_orx_center
     delay_measured = (
-        (rp_measured.magnitude() + tp_measured.magnitude()) /
-        (c0 + Cartesian3.dot(rp_measured.normalize(), vrx))
+        (tp_measured.magnitude() + rp_measured.magnitude()) /
+        (c0 + rp_measured.normalize().dot(vrx))
     )
 
     return np.squeeze(delay_measured - delay_truth) # [s]
