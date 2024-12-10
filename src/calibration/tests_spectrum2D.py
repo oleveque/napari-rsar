@@ -1,20 +1,23 @@
 
 import numpy as np
 from scipy.constants import c as c0
-from sargeom.coordinates import Cartographic, Cartesian3
+from sargeom.coordinates import Cartographic, CartesianECEF, Cartesian3
 
 from matplotlib import pyplot as plt
 
 ZAXIS = Cartesian3.UNIT_Z()
 
-def ground_bisector_vector(otx, orx):
-    # Bisector vector
+# def ground_bisector_vector_SG(otx, orx):
+#     txp,  rxp = -otx, -orx
+#     utxp, urxp = txp.normalize(), rxp.normalize()
+#     beta = utxp + urxp # Bisector vector using Stop-And-Go approximation
+#     return beta.reject_from(ZAXIS) # Ground bisector vector
+
+def ground_bisector_vector_FFL(otx, orx, vrx):
     txp,  rxp = -otx, -orx
-    utxp, utxp = txp.normalize(), rxp.normalize()
-    beta = utxp + utxp
-    
-    # Ground bisector vector
-    return beta.reject_from(ZAXIS)
+    utxp, urxp = txp.normalize(), rxp.normalize()
+    beta = c0 * (utxp + urxp) / (c0 + urxp.dot(vrx)) # Bisector vector using the Far-Field Linear approximation
+    return beta.reject_from(ZAXIS) # Ground bisector vector
 
 def spectrum2(data, header):
     # Scene center position
@@ -37,9 +40,16 @@ def spectrum2(data, header):
         latitude=header['data']['log']['flash']['azimuth']['integration']['rx']['center']['position_geo'][1], # [deg]
         height=header['data']['log']['flash']['azimuth']['integration']['rx']['center']['position_geo'][2] # [m]
     ).to_ecef().to_enu(origin=gp_center)
+
+    # Velocity vectors estimation @ integration center
+    vrx_center = CartesianECEF(
+        x=header['data']['log']['flash']['azimuth']['integration']['rx']['center']['velocity_ecef'][0], # [m/s]
+        y=header['data']['log']['flash']['azimuth']['integration']['rx']['center']['velocity_ecef'][1], # [m/s]
+        z=header['data']['log']['flash']['azimuth']['integration']['rx']['center']['velocity_ecef'][2] # [m/s]
+    ).to_enuv(origin=gp_center)
     
     # Ground bisector vector @ scene center
-    betag_center = ground_bisector_vector(otx_center, orx_center)
+    betag_center = ground_bisector_vector_FFL(otx_center, orx_center, vrx_center)
 
     # Wavenumber @ integration center min and max (relative to frequency)
     fc = header['data']['log']['range']['center_frequency_hz']
@@ -61,9 +71,16 @@ def spectrum2(data, header):
         latitude=header['data']['log']['flash']['azimuth']['integration']['rx']['start']['position_geo'][1], # [deg]
         height=header['data']['log']['flash']['azimuth']['integration']['rx']['start']['position_geo'][2] # [m]
     ).to_ecef().to_enu(origin=gp_center)
+
+    # Velocity vectors estimation @ integration start
+    vrx_start = CartesianECEF(
+        x=header['data']['log']['flash']['azimuth']['integration']['rx']['start']['velocity_ecef'][0], # [m/s]
+        y=header['data']['log']['flash']['azimuth']['integration']['rx']['start']['velocity_ecef'][1], # [m/s]
+        z=header['data']['log']['flash']['azimuth']['integration']['rx']['start']['velocity_ecef'][2] # [m/s]
+    ).to_enuv(origin=gp_center)
     
     # Ground bisector vector @ start
-    betag_start = ground_bisector_vector(otx_start, orx_start)
+    betag_start = ground_bisector_vector_FFL(otx_start, orx_start, vrx_start)
     
     # Wavenumber @ integration start min and max (relative to frequency)
     kmin_eta_start = 2 * np.pi / c0 * (fc - 0.5 * bproc) * betag_start - kc_eta_center
@@ -82,9 +99,16 @@ def spectrum2(data, header):
         latitude=header['data']['log']['flash']['azimuth']['integration']['rx']['end']['position_geo'][1], # [deg]
         height=header['data']['log']['flash']['azimuth']['integration']['rx']['end']['position_geo'][2] # [m]
     ).to_ecef().to_enu(origin=gp_center)
+
+    # Velocity vectors estimation @ integration end
+    vrx_end = CartesianECEF(
+        x=header['data']['log']['flash']['azimuth']['integration']['rx']['end']['velocity_ecef'][0], # [m/s]
+        y=header['data']['log']['flash']['azimuth']['integration']['rx']['end']['velocity_ecef'][1], # [m/s]
+        z=header['data']['log']['flash']['azimuth']['integration']['rx']['end']['velocity_ecef'][2] # [m/s]
+    ).to_enuv(origin=gp_center)
     
     # Ground bisector vector @ end
-    betag_end = ground_bisector_vector(otx_end, orx_end)
+    betag_end = ground_bisector_vector_FFL(otx_end, orx_end, vrx_end)
     
     # Wavenumber @ integration end min and max (relative to frequency)
     kmin_eta_end = 2 * np.pi / c0 * (fc - 0.5 * bproc) * betag_end - kc_eta_center
