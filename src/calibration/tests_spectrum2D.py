@@ -1,4 +1,3 @@
-
 import numpy as np
 from scipy.constants import c as c0
 from sargeom.coordinates import Cartographic, CartesianECEF, Cartesian3
@@ -27,28 +26,28 @@ def spectrum2(data, header):
         height=header['data']['log']['flash']['scene']['center_geo'][2] # [m]
     )
 
-    # TX integration center position
+    # TX position @ integration center
     otx_center = Cartographic(
         longitude=header['data']['log']['flash']['azimuth']['integration']['tx']['center']['position_geo'][0], # [deg]
         latitude=header['data']['log']['flash']['azimuth']['integration']['tx']['center']['position_geo'][1], # [deg]
         height=header['data']['log']['flash']['azimuth']['integration']['tx']['center']['position_geo'][2] # [m]
     ).to_ecef().to_enu(origin=gp_center)
 
-    # RX integration center position
+    # RX position @ integration center
     orx_center = Cartographic(
         longitude=header['data']['log']['flash']['azimuth']['integration']['rx']['center']['position_geo'][0], # [deg]
         latitude=header['data']['log']['flash']['azimuth']['integration']['rx']['center']['position_geo'][1], # [deg]
         height=header['data']['log']['flash']['azimuth']['integration']['rx']['center']['position_geo'][2] # [m]
     ).to_ecef().to_enu(origin=gp_center)
 
-    # Velocity vectors estimation @ integration center
+    # Velocity vectors @ integration center
     vrx_center = CartesianECEF(
         x=header['data']['log']['flash']['azimuth']['integration']['rx']['center']['velocity_ecef'][0], # [m/s]
         y=header['data']['log']['flash']['azimuth']['integration']['rx']['center']['velocity_ecef'][1], # [m/s]
         z=header['data']['log']['flash']['azimuth']['integration']['rx']['center']['velocity_ecef'][2] # [m/s]
     ).to_enuv(origin=gp_center)
     
-    # Ground bisector vector @ scene center
+    # Ground bisector vector @ integration center
     betag_center = ground_bisector_vector_FFL(otx_center, orx_center, vrx_center)
 
     # Wavenumber @ integration center min and max (relative to frequency)
@@ -58,63 +57,63 @@ def spectrum2(data, header):
     kmin_eta_center = 2 * np.pi / c0 * (fc - 0.5 * bproc) * betag_center - kc_eta_center
     kmax_eta_center = 2 * np.pi / c0 * (fc + 0.5 * bproc) * betag_center - kc_eta_center
 
-    # TX integration start position
+    # TX position @ integration start
     otx_start = Cartographic(
         longitude=header['data']['log']['flash']['azimuth']['integration']['tx']['start']['position_geo'][0], # [deg]
         latitude=header['data']['log']['flash']['azimuth']['integration']['tx']['start']['position_geo'][1], # [deg]
         height=header['data']['log']['flash']['azimuth']['integration']['tx']['start']['position_geo'][2] # [m]
     ).to_ecef().to_enu(origin=gp_center)
 
-    # RX integration center position
+    # RX position @ integration start
     orx_start = Cartographic(
         longitude=header['data']['log']['flash']['azimuth']['integration']['rx']['start']['position_geo'][0], # [deg]
         latitude=header['data']['log']['flash']['azimuth']['integration']['rx']['start']['position_geo'][1], # [deg]
         height=header['data']['log']['flash']['azimuth']['integration']['rx']['start']['position_geo'][2] # [m]
     ).to_ecef().to_enu(origin=gp_center)
 
-    # Velocity vectors estimation @ integration start
+    # Velocity vectors @ integration start
     vrx_start = CartesianECEF(
         x=header['data']['log']['flash']['azimuth']['integration']['rx']['start']['velocity_ecef'][0], # [m/s]
         y=header['data']['log']['flash']['azimuth']['integration']['rx']['start']['velocity_ecef'][1], # [m/s]
         z=header['data']['log']['flash']['azimuth']['integration']['rx']['start']['velocity_ecef'][2] # [m/s]
     ).to_enuv(origin=gp_center)
     
-    # Ground bisector vector @ start
+    # Ground bisector vector @ integration start
     betag_start = ground_bisector_vector_FFL(otx_start, orx_start, vrx_start)
     
     # Wavenumber @ integration start min and max (relative to frequency)
     kmin_eta_start = 2 * np.pi / c0 * (fc - 0.5 * bproc) * betag_start - kc_eta_center
     kmax_eta_start = 2 * np.pi / c0 * (fc + 0.5 * bproc) * betag_start - kc_eta_center
 
-    # TX integration end position
+    # TX position @ integration end
     otx_end = Cartographic(
         longitude=header['data']['log']['flash']['azimuth']['integration']['tx']['end']['position_geo'][0], # [deg]
         latitude=header['data']['log']['flash']['azimuth']['integration']['tx']['end']['position_geo'][1], # [deg]
         height=header['data']['log']['flash']['azimuth']['integration']['tx']['end']['position_geo'][2] # [m]
     ).to_ecef().to_enu(origin=gp_center)
 
-    # RX integration center position
+    # RX position @ integration end
     orx_end = Cartographic(
         longitude=header['data']['log']['flash']['azimuth']['integration']['rx']['end']['position_geo'][0], # [deg]
         latitude=header['data']['log']['flash']['azimuth']['integration']['rx']['end']['position_geo'][1], # [deg]
         height=header['data']['log']['flash']['azimuth']['integration']['rx']['end']['position_geo'][2] # [m]
     ).to_ecef().to_enu(origin=gp_center)
 
-    # Velocity vectors estimation @ integration end
+    # Velocity vectors @ integration end
     vrx_end = CartesianECEF(
         x=header['data']['log']['flash']['azimuth']['integration']['rx']['end']['velocity_ecef'][0], # [m/s]
         y=header['data']['log']['flash']['azimuth']['integration']['rx']['end']['velocity_ecef'][1], # [m/s]
         z=header['data']['log']['flash']['azimuth']['integration']['rx']['end']['velocity_ecef'][2] # [m/s]
     ).to_enuv(origin=gp_center)
     
-    # Ground bisector vector @ end
+    # Ground bisector vector @ integration end
     betag_end = ground_bisector_vector_FFL(otx_end, orx_end, vrx_end)
     
     # Wavenumber @ integration end min and max (relative to frequency)
     kmin_eta_end = 2 * np.pi / c0 * (fc - 0.5 * bproc) * betag_end - kc_eta_center
     kmax_eta_end = 2 * np.pi / c0 * (fc + 0.5 * bproc) * betag_end - kc_eta_center
 
-    # Image spacing @ scene center
+    # Image spacing
     spacing_x_m = header['data']['log']['flash']['scene']['spacing_x_m']
     spacing_y_m = header['data']['log']['flash']['scene']['spacing_y_m']
 
@@ -122,17 +121,17 @@ def spectrum2(data, header):
     kxmin, kxmax = -np.pi / spacing_x_m, np.pi / spacing_x_m
     kymin, kymax = -np.pi / spacing_y_m, np.pi / spacing_y_m
 
+    # Perform 2D FFT
     fft_data = np.fft.fftshift(np.fft.fft2(np.fft.ifftshift(data)))
+    amplitude, phase = np.abs(fft_data), np.angle(fft_data)
 
-    # see: https://stackoverflow.com/a/56595416
-
+    # Creating the black cover layer (see: https://stackoverflow.com/a/56595416)
     black = np.full((*fft_data.shape, 4), 0.)
-    black[:,:,-1] = np.abs(fft_data) / np.abs(fft_data).max()
-    black[:,:,-1] = 1 - black[:,:,-1]
+    black[:,:,-1] = 1 - amplitude / amplitude.max()
 
     plt.figure()
     plt.imshow(
-        np.angle(fft_data), cmap='hsv',
+        phase, cmap='hsv',
         extent=[kxmin, kxmax, kymin, kymax],
         interpolation='nearest'
     )

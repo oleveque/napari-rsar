@@ -3,33 +3,28 @@ from scipy.constants import c as c0
 from sargeom.coordinates import Cartographic, CartesianECEF
 
 def find_global_time_offset(data, header):
-    # TX integration center position
+    # TX position @ integration center
     gp_otx_center = Cartographic(
         longitude=header['data']['log']['flash']['azimuth']['integration']['tx']['center']['position_geo'][0], # [deg]
         latitude=header['data']['log']['flash']['azimuth']['integration']['tx']['center']['position_geo'][1], # [deg]
         height=header['data']['log']['flash']['azimuth']['integration']['tx']['center']['position_geo'][2] # [m]
     ).to_ecef()
 
-    # RX integration center position
+    # RX position @ integration center
     gp_orx_center = Cartographic(
         longitude=header['data']['log']['flash']['azimuth']['integration']['rx']['center']['position_geo'][0], # [deg]
         latitude=header['data']['log']['flash']['azimuth']['integration']['rx']['center']['position_geo'][1], # [deg]
         height=header['data']['log']['flash']['azimuth']['integration']['rx']['center']['position_geo'][2] # [m]
     ).to_ecef()
 
-    # Ground truth position
+    # Scene center position
     gp_truth = Cartographic(
         longitude=header['data']['log']['flash']['scene']['center_geo'][0], # [deg]
         latitude=header['data']['log']['flash']['scene']['center_geo'][1], # [deg]
         height=header['data']['log']['flash']['scene']['center_geo'][2] # [m]
     ).to_ecef()
 
-    # Velocity vectors estimation @ integration center
-    # vtx = CartesianECEF(
-    #     x=header['data']['log']['flash']['azimuth']['integration']['tx']['center']['velocity_ecef'][0], # [m/s]
-    #     y=header['data']['log']['flash']['azimuth']['integration']['tx']['center']['velocity_ecef'][1], # [m/s]
-    #     z=header['data']['log']['flash']['azimuth']['integration']['tx']['center']['velocity_ecef'][2] # [m/s]
-    # )
+    # RX velocity vector @ integration center
     vrx = CartesianECEF(
         x=header['data']['log']['flash']['azimuth']['integration']['rx']['center']['velocity_ecef'][0], # [m/s]
         y=header['data']['log']['flash']['azimuth']['integration']['rx']['center']['velocity_ecef'][0], # [m/s]

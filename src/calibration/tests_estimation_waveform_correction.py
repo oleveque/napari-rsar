@@ -19,21 +19,21 @@ HEADER = (
 "#        - PHASE_RAD [rad]: The unwrapped phase of the complex waveform correction file in radians.\n\n")
 
 def estimate_waveform_correction(data, header, output_path, display=False):
-    # TX integration center position
+    # TX position @ integration center
     gp_otx_center = Cartographic(
         longitude=header['data']['log']['flash']['azimuth']['integration']['tx']['center']['position_geo'][0], # [deg]
         latitude=header['data']['log']['flash']['azimuth']['integration']['tx']['center']['position_geo'][1], # [deg]
         height=header['data']['log']['flash']['azimuth']['integration']['tx']['center']['position_geo'][2] # [m]
     )
 
-    # RX integration center position
+    # RX position @ integration center
     gp_orx_center = Cartographic(
         longitude=header['data']['log']['flash']['azimuth']['integration']['rx']['center']['position_geo'][0], # [deg]
         latitude=header['data']['log']['flash']['azimuth']['integration']['rx']['center']['position_geo'][1], # [deg]
         height=header['data']['log']['flash']['azimuth']['integration']['rx']['center']['position_geo'][2] # [m]
     )
 
-    # Velocity vectors estimation @ integration center
+    # Velocity vectors @ integration center
     vtx = CartesianECEF(
         x=header['data']['log']['flash']['azimuth']['integration']['tx']['center']['velocity_ecef'][0], # [m/s]
         y=header['data']['log']['flash']['azimuth']['integration']['tx']['center']['velocity_ecef'][1], # [m/s]
@@ -79,12 +79,12 @@ def estimate_waveform_correction(data, header, output_path, display=False):
     vtx = vtx.to_enuv(origin=gp_max)
     vrx = vrx.to_enuv(origin=gp_max)
 
-    # Bisector vector @ maximum
+    # Bisector vector @ image maximum amplitude
     txp,  rxp = -otx_center, -orx_center
     utxp, urxp = txp.normalize(), rxp.normalize()
     beta =  c0 * (utxp + urxp) / (c0 + urxp.dot(vrx))
 
-    # Ground bisector vector @ scene center
+    # Ground bisector vector @ image maximum amplitude
     betag = beta.reject_from(ZAXIS)
 
     # First derivative of betagc
@@ -95,20 +95,20 @@ def estimate_waveform_correction(data, header, output_path, display=False):
         (c0 + urxp.dot(vrx))
     )
 
-    # Ground bisector vector @ scene center
+    # Ground bisector vector @ image maximum amplitude
     dbetag = dbeta.reject_from(ZAXIS)
 
-    # Ground range direction @ scene center
+    # Ground range direction @ image maximum amplitude
     rg = dbetag.cross(ZAXIS).normalize()
     rg *= np.sign(rg.dot(betag))
         
-    # Ground doppler direction @ scene center
+    # Ground doppler direction @ image maximum amplitude
     dg = betag.cross(ZAXIS).normalize()
     dg *= -np.sign(dg.dot(dbetag))
     # note: la direction de "dbeta" est opposée à celle de "v" d'où une direction
     #       d'accroissement des Doppler "inverse" par rapport au sens de dbeta.
     
-    # Image spacing @ scene center
+    # Image spacing
     spacing_x_m = header['data']['log']['flash']['scene']['spacing_x_m']
     spacing_y_m = header['data']['log']['flash']['scene']['spacing_y_m']
     
