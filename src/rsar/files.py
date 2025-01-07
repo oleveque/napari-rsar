@@ -191,3 +191,25 @@ class Trajectory(pd.DataFrame):
             raise ValueError("The .traj.csv file must contain the columns TIMESTAMP_S, LON_WGS84_DEG, LAT_WGS84_DEG, HEIGHT_WGS84_M, HEADING_DEG, ELEVATION_DEG, BANK_DEG")
 
         super().__init__(data)
+
+    def to_pos_file(self, filename=None):
+        if filename is None:
+            filename = self.filename.with_suffix("").with_suffix(".pos")
+        else:
+            filename = Path(filename)
+
+        pos = np.zeros((self.shape[0], 13))
+        pos[:,0] = self['TIMESTAMP_S'].astype(float)
+        pos[:,1] = self['LAT_WGS84_DEG'].astype(float)
+        pos[:,2] = self['LON_WGS84_DEG'].astype(float)
+        pos[:,3] = self['HEIGHT_WGS84_M'].astype(float)
+        pos[:,7] = self['BANK_DEG'].astype(float)
+        pos[:,8] = self['ELEVATION_DEG'].astype(float)
+        pos[:,9] = self['HEADING_DEG'].astype(float)
+
+        np.savetxt(
+            filename, pos,
+            fmt=['%.3f', '%.10f', '%.10f', '%.5f', '%.4f', '%.4f', '%.4f', '%.4f', '%.4f', '%.4f', '%.4f', '%.4f', '%.4f'],
+            delimiter='\t', newline='\n', comments='',
+            encoding='utf8'
+        )
