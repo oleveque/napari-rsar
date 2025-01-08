@@ -1,6 +1,5 @@
 from pathlib import Path
 from tomlkit import load
-from datetime import datetime
 import numpy as np
 import pandas as pd
 from sargeom.coordinates import Cartographic, CartesianECEF
@@ -49,8 +48,8 @@ class Image(np.memmap):
         )
 
         # Extract scale and offset values for data rescaling
-        self._scale = self.header['data']['data']['scale']
-        self._offset = self.header['data']['data']['offset']
+        self._scale = header['data']['data']['scale']
+        self._offset = header['data']['data']['offset']
 
         # Store the header information
         self._header = header
@@ -73,15 +72,15 @@ class Image(np.memmap):
     
     @property
     def datetime(self):
-        return datetime.fromisoformat(self._header['data']['datetime'])
+        return self._header['data']['datetime']
     
     @property
     def name(self):
-        return self._header['data']['name']
+        return self._header['data']['data']['name']
     
     @property
     def description(self):
-        return self._header['data']['desc']
+        return self._header['data']['data']['desc']
     
     def xlim(self):
         return (self._header['data']['row']["origin"], self._header['data']["row"]["origin"] + (self._header['data']["row"]["size"]-1) * self._header['data']["row"]["step"])
@@ -96,24 +95,24 @@ class Image(np.memmap):
         return np.linspace(*self.ylim(), self.shape[1])
     
     def is_flash(self):
-        return self._header['log'].has_key('flash')
+        return 'flash' in self._header['data']['log'].keys()
     
     def tx_integration_positions(self):
         if self.is_flash():
             start = Cartographic(
                 latitude=self._header['data']['log']['flash']['azimuth']['integration']['tx']['start']['position_geo'][0],
                 longitude=self._header['data']['log']['flash']['azimuth']['integration']['tx']['start']['position_geo'][1],
-                altitude=self._header['data']['log']['flash']['azimuth']['integration']['tx']['start']['position_geo'][2]
+                height=self._header['data']['log']['flash']['azimuth']['integration']['tx']['start']['position_geo'][2]
             )
             center = Cartographic(
                 latitude=self._header['data']['log']['flash']['azimuth']['integration']['tx']['center']['position_geo'][0],
                 longitude=self._header['data']['log']['flash']['azimuth']['integration']['tx']['center']['position_geo'][1],
-                altitude=self._header['data']['log']['flash']['azimuth']['integration']['tx']['center']['position_geo'][2]
+                height=self._header['data']['log']['flash']['azimuth']['integration']['tx']['center']['position_geo'][2]
             )
             end = Cartographic(
                 latitude=self._header['data']['log']['flash']['azimuth']['integration']['tx']['end']['position_geo'][0],
                 longitude=self._header['data']['log']['flash']['azimuth']['integration']['tx']['end']['position_geo'][1],
-                altitude=self._header['data']['log']['flash']['azimuth']['integration']['tx']['end']['position_geo'][2]
+                height=self._header['data']['log']['flash']['azimuth']['integration']['tx']['end']['position_geo'][2]
             )
             return (start, center, end)
         else:
@@ -141,17 +140,17 @@ class Image(np.memmap):
         start = Cartographic(
             latitude=self._header['data']['log']['flash']['azimuth']['integration']['rx']['start']['position_geo'][0],
             longitude=self._header['data']['log']['flash']['azimuth']['integration']['rx']['start']['position_geo'][1],
-            altitude=self._header['data']['log']['flash']['azimuth']['integration']['rx']['start']['position_geo'][2]
+            height=self._header['data']['log']['flash']['azimuth']['integration']['rx']['start']['position_geo'][2]
         )
         center = Cartographic(
             latitude=self._header['data']['log']['flash']['azimuth']['integration']['rx']['center']['position_geo'][0],
             longitude=self._header['data']['log']['flash']['azimuth']['integration']['rx']['center']['position_geo'][1],
-            altitude=self._header['data']['log']['flash']['azimuth']['integration']['rx']['center']['position_geo'][2]
+            height=self._header['data']['log']['flash']['azimuth']['integration']['rx']['center']['position_geo'][2]
         )
         end = Cartographic(
             latitude=self._header['data']['log']['flash']['azimuth']['integration']['rx']['end']['position_geo'][0],
             longitude=self._header['data']['log']['flash']['azimuth']['integration']['rx']['end']['position_geo'][1],
-            altitude=self._header['data']['log']['flash']['azimuth']['integration']['rx']['end']['position_geo'][2]
+            height=self._header['data']['log']['flash']['azimuth']['integration']['rx']['end']['position_geo'][2]
         )
         return (start, center, end)
     
