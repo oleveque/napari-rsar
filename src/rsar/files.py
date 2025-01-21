@@ -40,6 +40,7 @@ class Image(np.memmap):
             raise ValueError("Unsupported data type")
 
         # Load the data from the file
+        # TODO: Take into account the header['data']['offset_between_rows']
         self = super().__new__(cls, filename.with_suffix(''),
             shape=(header['data']['row']['size'], header['data']['col']['size']),
             offset=header['data']['global_offset_byte'],
@@ -66,6 +67,14 @@ class Image(np.memmap):
         return self._header['data']['is_complex']
     
     @property
+    def log(self):
+        return self._header['data']['log']
+    
+    @property
+    def unit(self):
+        return self._header['data']['data']['unit']
+    
+    @property
     def axis_units(self):
         return (self._header['data']['row']['unit'], self._header['data']['col']['unit'])
     
@@ -83,6 +92,10 @@ class Image(np.memmap):
     
     @property
     def description(self):
+        return self._header['data']['desc']
+    
+    @property
+    def subdescription(self):
         return self._header['data']['data']['desc']
     
     def xlim(self):
