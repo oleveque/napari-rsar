@@ -59,6 +59,9 @@ class Image(np.memmap):
     def __init__(self, filename):
         pass
 
+    def __str__(self):
+        return f"Image rSAR '{self.name}' ({self.shape[0]} x {self.shape[1]})"
+
     def is_complex(self):
         return self._header['data']['is_complex']
     
