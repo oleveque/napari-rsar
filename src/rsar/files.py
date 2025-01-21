@@ -48,10 +48,6 @@ class Image(np.memmap):
             mode='r'
         )
 
-        # Extract scale and offset values for data rescaling
-        self._scale = header['data']['data']['scale']
-        self._offset = header['data']['data']['offset']
-
         # Store the header information
         self._header = header
 
@@ -62,6 +58,17 @@ class Image(np.memmap):
 
     def __str__(self):
         return f"Image rSAR '{self.name}' ({self.shape[0]} x {self.shape[1]})"
+
+    def __getitem__(self, key):
+        # Extract data
+        data = super().__getitem__(key)
+
+        # Extract scale and offset values
+        self._scale = self._header['data']['data']['scale']
+        self._offset = self._header['data']['data']['offset']
+
+        # Apply scale and offset values
+        return self._scale * (data + self._offset)
 
     def is_complex(self):
         return self._header['data']['is_complex']
